@@ -35,16 +35,20 @@ ApplicationWindow{
     onWidthChanged: appSettings.width = width
     onHeightChanged: appSettings.height = height
 
-    // Load saved window geometry and show the window
-    Component.onCompleted: {        
-        appSettings.handleFontChanged();
 
+    function addTerminal(){
+        tabView.loadTab();
+        appSettings.handleFontChanged();
         x = appSettings.x
         y = appSettings.y
         width = appSettings.width
         height = appSettings.height
-
         visible = true
+    }
+
+    // Load saved window geometry and show the window
+    Component.onCompleted: {        
+       addTerminal();
     }
 
     minimumWidth: 320
@@ -65,8 +69,32 @@ ApplicationWindow{
     property string wintitle: appSettings.wintitle
 
     color: "#00000000"
-    title: terminalContainer.title || qsTr(appSettings.wintitle)
+	Action {
+        id: newAction
+        text: qsTr("New Window")
+        shortcut: "Ctrl+Shift+N"
+        onTriggered: {
+            root.newWindow()
+        }
+    }
 
+	Action {
+        id: newTabAction
+        text: qsTr("New Tab")
+        shortcut: StandardKey.New
+        onTriggered: {            
+            addTerminal();
+        }
+    }
+
+    Action {
+        id: closeAction
+        text: qsTr("Close Window")
+        shortcut: Qt.platform.os === "osx" ? StandardKey.Close : "Ctrl+Shift+W"
+        onTriggered: {
+            terminalWindow.close()
+        }
+    }
     Action {
         id: showMenubarAction
         text: qsTr("Show Menubar")
@@ -103,12 +131,12 @@ ApplicationWindow{
     Action{
         id: copyAction
         text: qsTr("Copy")
-        shortcut: "Ctrl+Shift+C"
+        shortcut: "Ctrl+C"
     }
     Action{
         id: pasteAction
         text: qsTr("Paste")
-        shortcut: "Ctrl+Shift+V"
+        shortcut: "Ctrl+V"
     }
     Action{
         id: zoomIn
@@ -134,12 +162,32 @@ ApplicationWindow{
     ApplicationSettings{
         id: appSettings
     }
-    TerminalContainer{
-        id: terminalContainer
-        y: appSettings.showMenubar ? 0 : -2 // Workaroud to hide the margin in the menubar.
-        width: parent.width
-        height: (parent.height + Math.abs(y))
+    TabView {
+        id: tabView
+        anchors.fill: parent
+        anchors.margins: 10
+        Component{
+            id:viewComp
+            TerminalContainer{
+                id: terminalContainer
+                y: appSettings.showMenubar ? 0 : -2 // Workaroud to hide the margin in the menubar.
+                width: tabView.width
+                height: (tabView.height + Math.abs(y))
+                onVisibleChanged:{
+                    console.log("==================="+visible);
+                    if(visible){
+                        updateActivity();
+                        tabView.getTab(tabView.currentIndex).title = terminalContainer.title 
+                    }
+                }
+            }
+        }
+        function loadTab(){
+            var t = tabView.addTab(count,viewComp)
+            tabView.currentIndex = count-1;
+        }
     }
+
     SettingsWindow{
         id: settingswindow
         visible: false
@@ -148,18 +196,20 @@ ApplicationWindow{
         id: aboutDialog
         visible: false
     }
-    Loader{
-        anchors.centerIn: parent
-        active: appSettings.showTerminalSize
-        sourceComponent: SizeOverlay{
-            z: 3
-            terminalSize: terminalContainer.terminalSize
-        }
-    }
+    // Loader{
+    //     anchors.centerIn: parent
+    //     active: appSettings.showTerminalSize
+    //     sourceComponent: SizeOverlay{
+    //         z: 3
+    //         terminalSize: terminalContainer.terminalSize
+    //     }
+    // }
     onClosing: {
         // OSX Since we are currently supporting only one window
         // quit the application when it is closed.
-        if (Qt.platform.os === "osx")
-            Qt.quit()
+        // if (Qt.platform.os === "osx")
+        //     Qt.quit()
+
+        root.closeWindow()
     }
 }

@@ -67,6 +67,9 @@ Item{
     function updateSources() {
         kterminal.update();
     }
+    function updateActivity(){
+        kterminal.forceActiveFocus();
+    }
 
     QMLTermWidget {
         id: kterminal
@@ -132,7 +135,8 @@ Item{
         }
 
         function startSession() {
-            appSettings.initializedSettings.disconnect(startSession);
+            console.log("============= start session ============");
+            // appSettings.initializedSettings.disconnect(startSession);
 
             // Retrieve the variable set in main.cpp if arguments are passed.
             if (defaultCmd) {
@@ -154,8 +158,10 @@ Item{
             forceActiveFocus();
         }
         Component.onCompleted: {
+            console.log("=======on complete=====");
             appSettings.terminalFontChanged.connect(handleFontChanged);
-            appSettings.initializedSettings.connect(startSession);
+            // appSettings.initializedSettings.connect(startSession);
+            startSession();
         }
     }
     Component {
